@@ -395,7 +395,7 @@ draw_frame(Bar *bar)
 		const bool occupied = bar->ctags & 1 << i;
 		const bool urgent = bar->urg & 1 << i;
 		
-		if (hide_vacant && !active && !occupied && !urgent)
+		if (hide_vacant && !(active || occupied || urgent))
 			continue;
 
 		pixman_color_t *fg_color = urgent ? &urgent_fg_color : (active ? &active_fg_color : (occupied ? &occupied_fg_color : &inactive_fg_color));
@@ -407,7 +407,7 @@ draw_frame(Bar *bar)
 							.x1 = x + boxs, .x2 = x + boxs + boxw,
 							.y1 = boxs, .y2 = boxs + boxw
 						});
-			if ((!bar->sel || !active) && boxw >= 3) {
+			if (!(bar->sel && active) && (boxw >= 3)) {
 				/* Make box hollow */
 				pixman_image_fill_boxes(PIXMAN_OP_SRC, foreground,
 							&(pixman_color_t){ 0 },
@@ -435,7 +435,7 @@ draw_frame(Bar *bar)
 	uint32_t nx;
 	if (center_title) {
 		uint32_t title_width = TEXT_WIDTH(custom_title ? bar->title.text : bar->window_title, bar->width - status_width - x, 0);
-		nx = MAX(x, MIN((bar->width - title_width) / 2, bar->width - status_width - title_width));
+		nx = MAX(x, MIN(((bar->width - title_width - x - status_width) >> 1) + x, bar->width - status_width - title_width));
 	} else {
 		nx = MIN(x + bar->textpadding, bar->width - status_width);
 	}
