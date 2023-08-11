@@ -26,6 +26,8 @@
 #include "xdg-output-unstable-v1-protocol.h"
 #include "wlr-layer-shell-unstable-v1-protocol.h"
 #include "dwl-ipc-unstable-v2-protocol.h"
+#include "components.h"
+#include "util.h"
 
 #define DIE(fmt, ...)						\
 	do {							\
@@ -200,6 +202,8 @@ static struct fcft_font *font;
 static uint32_t height, textpadding, buffer_scale;
 
 static bool run_display;
+
+char buf[1024];
 
 #include "config.h"
 
@@ -1565,19 +1569,19 @@ event_loop(void)
 
 static void
 client_send_command(struct sockaddr_un *sock_address, const char *output,
-		    const char *cmd, const char *data)
+                    const char *cmd, const char *data)
 {
 	DIR *dir;
 	if (!(dir = opendir(socketdir)))
 		EDIE("Could not open directory '%s'", socketdir);
 
 	if (data)
-		snprintf(sockbuf, sizeof sockbuf, "%s %s %s", output, cmd, data);
+		snprintf(sockbuf, sizeof(sockbuf), "%s %s %s", output, cmd, data);
 	else
-		snprintf(sockbuf, sizeof sockbuf, "%s %s", output, cmd);
-	
+		snprintf(sockbuf, sizeof(sockbuf), "%s %s", output, cmd);
+
 	size_t len = strlen(sockbuf);
-			
+
 	struct dirent *de;
 	bool newfd = true;
 
@@ -1597,7 +1601,7 @@ client_send_command(struct sockaddr_un *sock_address, const char *output,
 			newfd = true;
 		}
 	}
-			
+
 	closedir(dir);
 }
 
@@ -1625,13 +1629,36 @@ main(int argc, char **argv)
 			EDIE("Could not create directory '%s'", socketdir);
 	sock_address.sun_family = AF_UNIX;
 
+	if(argc == 1){
+		char str[TEXT_MAX];
+		str[TEXT_MAX-1] = '\0';
+		const char* result;
+		size_t len = 0;
+		int ret;
+		for(size_t i = 0; i != sizeof(args) / sizeof(struct arg); i++){
+			if(!(result = args[i].func(args[i].args)))
+				result = UNDEFINEDSTR;
+			// TODO: replace ret with len
+			// TODO: check snprintf docs and optimize
+			if((ret = snprintf(str + len, TEXT_MAX - len, args[i].fmt, result)) < 0)
+				break;
+			len += ret;
+		}
+		while(true){
+			client_send_command(&sock_address, "all", "status", str);
+			printf("%s\n", str);
+			sleep(interval);
+		}
+		return EXIT_SUCCESS;
+	}
+
 	/* Parse options */
 	for (int i = 1; i < argc; i++) {
 		if (!strcmp(argv[i], "-status")) {
 			if (++i + 1 >= argc)
 				DIE("Option -status requires two arguments");
 			client_send_command(&sock_address, argv[i], "status", argv[i + 1]);
-			return 0;
+			return EXIT_SUCCESS;
 		} else if (!strcmp(argv[i], "-status-stdin")) {
 			if (++i >= argc)
 				DIE("Option -status-stdin requires an argument");
@@ -1641,7 +1668,7 @@ main(int argc, char **argv)
 				client_send_command(&sock_address, argv[i], "status", status);
 			}
 			free(status);
-			return 0;
+			return EXIT_SUCCESS;
 		} else if (!strcmp(argv[i], "-title")) {
 			if (++i + 1 >= argc)
 				DIE("Option -title requires two arguments");

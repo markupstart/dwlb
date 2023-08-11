@@ -10,7 +10,7 @@ config.h:
 	cp config.def.h $@
 
 clean:
-	$(RM) $(BINS) $(addsuffix .o,$(BINS))
+	$(RM) $(BINS) $(BINS:=.o) $(COM:=.o) $(REQ:=.o) $(PROT:=.o)
 
 install: all
 	install -D -t $(PREFIX)/bin $(BINS)
@@ -43,13 +43,45 @@ dwl-ipc-unstable-v2-protocol.c:
 	$(WAYLAND_SCANNER) private-code protocols/dwl-ipc-unstable-v2.xml $@
 dwl-ipc-unstable-v2-protocol.o: dwl-ipc-unstable-v2-protocol.h
 
-dwlb.o: utf8.h config.h xdg-shell-protocol.h xdg-output-unstable-v1-protocol.h wlr-layer-shell-unstable-v1-protocol.h dwl-ipc-unstable-v2-protocol.h
+COM = components/battery\
+	components/cat\
+	components/cpu\
+	components/datetime\
+	components/disk\
+	components/entropy\
+	components/hostname\
+	components/ip\
+	components/kernel_release\
+	components/keyboard_indicators\
+	components/keymap\
+	components/load_avg\
+	components/netspeeds\
+	components/num_files\
+	components/ram\
+	components/run_command\
+	components/swap\
+	components/temperature\
+	components/uptime\
+	components/user\
+	components/volume\
+	components/wifi
 
-# Protocol dependencies
-dwlb: xdg-shell-protocol.o xdg-output-unstable-v1-protocol.o wlr-layer-shell-unstable-v1-protocol.o dwl-ipc-unstable-v2-protocol.o
+REQ = util
+
+PROT = xdg-shell-protocol\
+	xdg-output-unstable-v1-protocol\
+	wlr-layer-shell-unstable-v1-protocol\
+	dwl-ipc-unstable-v2-protocol
+
+$(COM:=.o): components.h $(REQ:=.h)
+
+dwlb.o: utf8.h config.h $(PROT:=.h) $(REQ:=.h)
+
+# Protocol and utils dependencies
+dwlb: $(PROT:=.o) $(COM:=.o) $(REQ:=.o)
 
 # Library dependencies
-dwlb: CFLAGS+=$(shell pkg-config --cflags wayland-client wayland-cursor fcft pixman-1)
-dwlb: LDLIBS+=$(shell pkg-config --libs wayland-client wayland-cursor fcft pixman-1) -lrt
+dwlb: CFLAGS+=$(shell pkg-config --cflags wayland-client wayland-cursor fcft pixman-1) -s
+dwlb: LDLIBS+=$(shell pkg-config --libs wayland-client wayland-cursor fcft pixman-1) -lrt -s
 
 .PHONY: all clean install
