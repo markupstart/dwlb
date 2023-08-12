@@ -101,6 +101,7 @@
 	"Commands\n"							\
 	"	-status	[OUTPUT] [TEXT]		set status text\n"	\
 	"	-status-stdin	[OUTPUT]		set status text from stdin\n"	\
+	"	-configured-status			set status text to previously configured from config.def.h prior to code compilation" \
 	"	-title	[OUTPUT] [TEXT]		set title text, if -custom-title is enabled\n"	\
 	"	-show [OUTPUT]			show bar\n"		\
 	"	-hide [OUTPUT]			hide bar\n"		\
@@ -1629,7 +1630,7 @@ main(int argc, char **argv)
 			EDIE("Could not create directory '%s'", socketdir);
 	sock_address.sun_family = AF_UNIX;
 
-	if(argc == 1){
+	if(argc == 0){
 		char str[TEXT_MAX];
 		str[TEXT_MAX-1] = '\0';
 		const char* result;
@@ -1646,7 +1647,7 @@ main(int argc, char **argv)
 		}
 		while(true){
 			client_send_command(&sock_address, "all", "status", str);
-			printf("%s\n", str);
+			//printf("%s\n", str);
 			sleep(interval);
 		}
 		return EXIT_SUCCESS;
@@ -1668,6 +1669,27 @@ main(int argc, char **argv)
 				client_send_command(&sock_address, argv[i], "status", status);
 			}
 			free(status);
+			return EXIT_SUCCESS;
+		} else if (!strcmp(argv[i], "-configured-status")){
+			char str[TEXT_MAX];
+			str[TEXT_MAX-1] = '\0';
+			const char* result;
+			size_t len = 0;
+			int ret;
+			for(size_t i = 0; i != sizeof(args) / sizeof(struct arg); i++){
+				if(!(result = args[i].func(args[i].args)))
+					result = UNDEFINEDSTR;
+				// TODO: replace ret with len
+				// TODO: check snprintf docs and optimize
+				if((ret = snprintf(str + len, TEXT_MAX - len, args[i].fmt, result)) < 0)
+					break;
+				len += ret;
+			}
+			while(true){
+				client_send_command(&sock_address, "all", "status", str);
+				//printf("%s\n", str);
+				sleep(interval);
+			}
 			return EXIT_SUCCESS;
 		} else if (!strcmp(argv[i], "-title")) {
 			if (++i + 1 >= argc)
@@ -1934,5 +1956,5 @@ main(int argc, char **argv)
 	wl_registry_destroy(registry);
 	wl_display_disconnect(display);
 
-	return 0;
+	return EXIT_SUCCESS;
 }

@@ -81,7 +81,7 @@ dwlb.o: utf8.h config.h $(PROT:=.h) $(REQ:=.h)
 dwlb: $(PROT:=.o) $(COM:=.o) $(REQ:=.o)
 
 # Library dependencies
-dwlb: CFLAGS+=$(shell pkg-config --cflags wayland-client wayland-cursor fcft pixman-1) -s
+dwlb: CFLAGS+=$(shell pkg-config --cflags wayland-client wayland-cursor fcft pixman-1) -s -g
 dwlb: LDLIBS+=$(shell pkg-config --libs wayland-client wayland-cursor fcft pixman-1) -lrt -s
 
 .PHONY: all clean install
