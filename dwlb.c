@@ -1630,29 +1630,6 @@ main(int argc, char **argv)
 			EDIE("Could not create directory '%s'", socketdir);
 	sock_address.sun_family = AF_UNIX;
 
-	if(argc == 0){
-		char str[TEXT_MAX];
-		str[TEXT_MAX-1] = '\0';
-		const char* result;
-		size_t len = 0;
-		int ret;
-		for(size_t i = 0; i != sizeof(args) / sizeof(struct arg); i++){
-			if(!(result = args[i].func(args[i].args)))
-				result = UNDEFINEDSTR;
-			// TODO: replace ret with len
-			// TODO: check snprintf docs and optimize
-			if((ret = snprintf(str + len, TEXT_MAX - len, args[i].fmt, result)) < 0)
-				break;
-			len += ret;
-		}
-		while(true){
-			client_send_command(&sock_address, "all", "status", str);
-			//printf("%s\n", str);
-			sleep(interval);
-		}
-		return EXIT_SUCCESS;
-	}
-
 	/* Parse options */
 	for (int i = 1; i < argc; i++) {
 		if (!strcmp(argv[i], "-status")) {
@@ -1674,20 +1651,20 @@ main(int argc, char **argv)
 			char str[TEXT_MAX];
 			str[TEXT_MAX-1] = '\0';
 			const char* result;
-			size_t len = 0;
 			int ret;
-			for(size_t i = 0; i != sizeof(args) / sizeof(struct arg); i++){
-				if(!(result = args[i].func(args[i].args)))
-					result = UNDEFINEDSTR;
-				// TODO: replace ret with len
-				// TODO: check snprintf docs and optimize
-				if((ret = snprintf(str + len, TEXT_MAX - len, args[i].fmt, result)) < 0)
-					break;
-				len += ret;
-			}
 			while(true){
+				size_t len = 0;
+				for(size_t i = 0; i != sizeof(args) / sizeof(struct arg); i++){
+					if(!(result = args[i].func(args[i].args)))
+						result = UNDEFINEDSTR;
+					if((ret = snprintf(str + len, TEXT_MAX - len, args[i].fmt, result)) < 0)
+						break;
+					len += ret;
+				}
+				str[len] = '\0';
 				client_send_command(&sock_address, "all", "status", str);
 				//printf("%s\n", str);
+				len = 0;
 				sleep(interval);
 			}
 			return EXIT_SUCCESS;
