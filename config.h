@@ -88,20 +88,21 @@ const unsigned int interval = 1;
  * uid                 UID of current user             NULL
  * uptime              system uptime                   NULL
  * username            username of current user        NULL
+ * vol_perc            OSS/ALSA volume in percent      mixer file (/dev/mixer)
  *                                                     NULL on OpenBSD/FreeBSD
  * wifi_essid          WiFi ESSID                      interface name (wlan0)
  * wifi_perc           WiFi signal in percent          interface name (wlan0)
  */
 static const struct arg args[] = {
 	/* function     format          argument */
-	{ uptime,       " UP: %s",      NULL                    },
-	{ disk_free,     "| DISK: %s",    "/"                    },
-	{ cpu_perc,     "| CPU: %s%%",  NULL                     },
-	{ ram_used,     " | MEM: %s",   NULL                     },
+	{ uptime,       "  %s",      NULL                    },
+	{ disk_free,     "      %s",    "/"                    },
+	{ cpu_perc,     "      %s%%",  NULL                     },
+	{ ram_used,     "      %s",   NULL                     },
 	{ ram_total,    "/%s",           NULL                     },
 //	{ ram_perc,     " (%s%%)",       NULL                     },
 //	{ load_avg,     " | load: %s",   NULL                     },
-	{ datetime,     " | %s",         "%a %d %b %l:%M%p" },
+	{ datetime,     "     %s",         "%a %d %b %l:%M%p" },
 
 };
 
